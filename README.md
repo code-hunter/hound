@@ -1,1 +1,1 @@
-crawler general message like hound.
+crawler general news like hound.
