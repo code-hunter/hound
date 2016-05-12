@@ -68,7 +68,6 @@ class ToutiaoParser(object):
 
 if __name__ == "__main__":
     url = "http://toutiao.io/prev/"
-    #ToutiaoParser(url)
     format_str = '%Y-%m-%d'
 
     #date sub
