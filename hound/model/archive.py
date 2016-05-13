@@ -18,4 +18,5 @@ class Archive(object):
                  'orig_url': self.orig_url,
                  'url': self.url,
                  'md5': self.md5,
-                 'create_time': self.create_time}
+                 'create_time': self.create_time,
+                 'website': self.website}
