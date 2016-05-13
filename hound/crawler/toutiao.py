@@ -5,6 +5,7 @@ import datetime
 from hound.model.archive import Archive
 from elasticsearch import Elasticsearch
 import random
+import hashlib
 
 header = {
     "User-Agent": 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.94 Safari/537.36'
@@ -55,6 +56,8 @@ class ToutiaoParser(object):
             art.author = ele.find_class('subject-name')[0].cssselect("a")[0].text_content()
             art.title = ele.find_class('title')[0].cssselect("a")[0].text_content()
             art.url = ele.find_class('title')[0].cssselect("a")[0].attrib['href']
+            art.md5 = hashlib.md5(art.url).hexdigest()
+            art.create_time = datetime.datetime.now()
 
             article_list.append(art)
         return article_list
