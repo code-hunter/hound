@@ -31,7 +31,6 @@ def get_data_of_ip84(url):
         ip_list.append(pi)
     return ip_list
 
-
 def get_ip84_url(num):
     url_list = []
     url = 'http://www.ip84.com/gn/'
