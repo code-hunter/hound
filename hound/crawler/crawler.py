@@ -1,9 +1,8 @@
 
-
 class Crawler(object):
 
     def __init__(self):
-        pass
+        self.urls = None
 
     def fetch(self):
         pass
