@@ -1,5 +1,4 @@
-from requests import request, sessions
-from lxml import etree
+from requests import request
 import lxml.html
 import datetime
 from hound.model.archive import Archive
