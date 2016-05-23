@@ -122,21 +122,4 @@ class GeekToutiaoParser(object):
 
 
 if __name__ == '__main__':
-    # gt = GeekToutiaoParser(type="news")
-    r_url = "http://geek.csdn.net/user/publishlist/rnifeasy/1/17"
-    resp = request("get", r_url, headers=header)
-
-    data = es.search(index_name, doc_type, body={
-        "aggs": {
-            "authors": {
-                "terms": {
-                    "field": "author",
-                    "size": "0"
-                }
-            }
-        }
-    }, suggest_size=10)
-    author_list = data['aggregations']['authors']['buckets']
-    for author in author_list:
-        print "author name : %s " % author['key']
-    print "author list size : %d " % len(author_list)
+    gt = GeekToutiaoParser(type="news")
