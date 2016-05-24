@@ -112,6 +112,6 @@ if __name__ == "__main__":
     days = (now_date-old_date).days
     for day in range(days):
         old_date += datetime.timedelta(days=1)
-        ToutiaoParser(url+datetime.datetime.strftime(old_date, format_str))
+        ToutiaoParser(url+datetime.datetime.strftime(old_date, format_str),proxies=proxy_lit)
 
     print datetime.datetime.now()

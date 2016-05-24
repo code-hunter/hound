@@ -21,9 +21,11 @@ import urllib
 import hashlib
 import lxml.html
 import datetime
+import random
 from requests import request
 from hound.model.archive import Archive
 from elasticsearch import Elasticsearch
+from hound.common.ipget import IpGet
 
 header = {
     "User-Agent": 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) '
@@ -37,6 +39,16 @@ index_name = 'hound'
 doc_type = 'crawler'
 es.indices.create(index=index_name, ignore=400)
 
+# proxy ip list
+proxies = IpGet().get_proxy_list()
+
+
+def find_proxy():
+    proxy = {}
+    if proxies is not None:
+        proxy = random.choice(proxies)
+    return proxy
+
 
 class GeekToutiaoParser(object):
     def __init__(self, proxies=None, type=None):
@@ -45,13 +57,15 @@ class GeekToutiaoParser(object):
         self.proxies = proxies
         if type == "news":
             self._news_parse_json()
+        elif type == "author":
+            self._author_parse()
         else:
             self._hack_count_parse_json()
 
     def _news_parse_json(self, page_range=0):
         r_url = "http://geek.csdn.net/service/news/get_category_news_list?category_id=news&username=&from=" + str(
             page_range) + "&size=" + str(self.size) + "&type=category"
-        resp = request("get", r_url, headers=header)
+        resp = request("get", r_url, headers=header, proxies=find_proxy())
         if resp.status_code == 200:
             result = resp.json()
             status = result['status']
@@ -68,7 +82,7 @@ class GeekToutiaoParser(object):
 
     def _hack_count_parse_json(self, page_range="-", type="HackCount"):
         r_url = 'http://geek.csdn.net/service/news/get_news_list?from=' + page_range + '&size=20&type=' + type
-        resp = request("get", r_url, headers=header)
+        resp = request("get", r_url, headers=header, proxies=find_proxy())
         if resp.status_code == 200:
             content = resp.json()
             status = content['status']
@@ -102,6 +116,7 @@ class GeekToutiaoParser(object):
         return data_list
 
     def _save(self, data_list):
+        print "archive list size : %d" % len(data_list)
         for art in data_list:
             es.create(index=index_name, doc_type=doc_type, body=art.as_dict())
 
@@ -117,22 +132,36 @@ class GeekToutiaoParser(object):
             }
         }, suggest_size=10)
         author_list = data['aggregations']['authors']['buckets']
+        print "author list size : %d " % len(author_list)
+
         for author in author_list:
-            print "author name : %s " % author['key']
+            self._author_parse_json(author['key'])
 
     def _author_parse_json(self, author, page_size=0):
         r_url = "http://geek.csdn.net/user/publishlist/" + author + "/" + str(page_size)
-        resp = request("get", r_url, headers=header)
-        if resp["status"] is False:
+        resp = request("get", r_url, headers=header, proxies=find_proxy())
+        if resp.status_code is not 200:
+            print "request failure : %d" % resp.status_code
             return
-        html_str = resp['html']
+
+        content = resp.json()
+        if content["status"] is False:
+            return
+        # parse html and get archive data list
+        html_str = content['html']
+        if html_str == "":
+            print "no html will be parsed,author : %s, page_size : %d" % (author, page_size)
+            return
+
         data_list = self._parse_html(html_str, r_url)
         if len(data_list) > 0:
             self._save(data_list)
-        if resp["has_more"]:
+        if content["has_more"]:
             page_size += 1
             self._author_parse_json(author, page_size)
 
 
 if __name__ == '__main__':
-    gt = GeekToutiaoParser(type="news")
+    #gt_news = GeekToutiaoParser(type="news")
+
+    gt_author = GeekToutiaoParser(type="author")

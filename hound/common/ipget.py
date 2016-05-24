@@ -5,10 +5,23 @@ import bs4
 from hound.model.proxyinfo import ProxyInfo
 from elasticsearch import Elasticsearch
 
-es = Elasticsearch(hosts=["192.168.10.67"])
-index_name = 'ip'
-doc_type = 'proxy_info'
-es.indices.create(index=index_name, ignore=400)
+DATA_LIST = []
+
+
+def get_ip84_url(num=2):
+    url_list = []
+    url = 'http://www.ip84.com/gn/'
+    for i in range(1, num):
+        url_list.append(url + str(i))
+    return url_list
+
+
+def ip84_get():
+    data_list = []
+    url_list = get_ip84_url()
+    for url in url_list:
+        data_list.append(get_data_of_ip84(url))
+    return data_list
 
 
 def get_data_of_ip84(url):
@@ -31,24 +44,31 @@ def get_data_of_ip84(url):
         ip_list.append(pi)
     return ip_list
 
-def get_ip84_url(num):
-    url_list = []
-    url = 'http://www.ip84.com/gn/'
-    for i in range(1, num):
-        url_list.append(url+str(i))
-    return url_list
 
+class IpGet(object):
+    def __init__(self):
+        global DATA_LIST
+        if len(DATA_LIST) > 0:
+            return
+        # proxy list
+        proxies = []
+        data_list = ip84_get()
+        for data in data_list[0]:
+            proxy = {
+                data.protocol: data.protocol+"://"+data.ip+":"+data.port
+            }
+            proxies.append(proxy)
+        DATA_LIST = proxies
 
-def ip84():
-    num = 10
-    data_list = []
-    url_list = get_ip84_url(num)
-    for url in url_list:
-        data_list.append(get_data_of_ip84(url))
+    def get_proxy_list(self):
+        return DATA_LIST
 
-    for ip_lis in data_list:
-        for pi in ip_lis:
-            es.create(index_name,doc_type,pi.as_dict())
 
 if __name__ == "__main__":
-    ip84()
+    list = IpGet().get_proxy_list()
+    print "%d " % len(list)
+
+    list1 = IpGet().get_proxy_list()
+    list2 = IpGet().get_proxy_list()
+    list3 = IpGet().get_proxy_list()
+
