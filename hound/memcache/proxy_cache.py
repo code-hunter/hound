@@ -1,14 +1,13 @@
-import weakref
 import random
 
-class ResultCache(object):
+class ProxyCache(object):
 
     def __new__(cls, *args, **kwargs):
 
         if not hasattr(cls, '_instance'):
-            _instance = super(ResultCache,cls).__new__(cls, *args, **kwargs)
+            _instance = super(ProxyCache,cls).__new__(cls, *args, **kwargs)
             setattr(cls, '_instance', _instance)
-            _cache = weakref.WeakKeyDictionary()
+            _cache = []
             setattr(_instance, '_cache', _cache)
             return _instance
         else:
@@ -17,13 +16,23 @@ class ResultCache(object):
     def __init__(self):
         self._cache = []
 
+
     def put(self, item):
+        '''item format : (host, port)'''
         self._cache.append(item)
 
     def get(self):
-        return self._cache.pop()
+        return self._cache[random.randint(0, len(self._cache) - 1)]
 
-    def get_random(self):
-        return self._cache.pop(random.random(0, len(self._cache) - 1))
+
+if __name__ == '__main__':
+
+    proxy_cache = ProxyCache()
+    proxy_cache.put(('host1', '9090'))
+    proxy_cache.put(('host2', '9292'))
+
+    print proxy_cache.get()
+
+
 
 
