@@ -61,9 +61,13 @@ class Crawler(object):
 
                 task = self.task_queue.get()
 
-                response = yield self.http_client.fetch(task.url)
+                response = yield self.http_client.fetch(task.url, **task.request_params)
                 spider_inst = task.spider_cls()
-                spider_inst.on_callback(task.callback, response.body)
+
+                result = spider_inst.on_callback(task.callback, response.body)
+
+                if isinstance(result, list) or isinstance(result, dict):
+                    spider_inst.on_save(task, result)
 
         spiders_cls = self.get_all_spiders()
         for spider_cls in spiders_cls:

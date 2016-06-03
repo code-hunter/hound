@@ -30,9 +30,18 @@ class HttpClient(object):
 # if __name__ == '__main__':
 #     io_loop = IOLoop.instance()
 #     client = HttpClient()
-#     io_loop.run_sync(lambda : client.fetch('http://wallstreetcn.com/news?page=1'))
-
-
+#
+#     headers = {
+#     "User-Agent": 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) '
+#                   'Chrome/50.0.2661.94 Safari/537.36',
+#     "Accept": "application/json",
+#     "X-Requested-With": "XMLHttpRequest"
+#     }
+#
+#
+#     io_loop.run_sync(lambda : client.fetch('http://geek.csdn.net/user/publishlist/wanghui_777/1', headers=headers))
+#
+#
 
 
 

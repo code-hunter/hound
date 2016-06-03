@@ -5,6 +5,8 @@ class Task(object):
     def __init__(self):
         self.id = None
         self.url = None
+        self.db_conn = None
+        self.request_params = None
         self.spider_cls = None
         self.func = None
         self.kwargs = None
