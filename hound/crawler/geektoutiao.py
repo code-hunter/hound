@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
 #
 # Licensed under the Apache License, Version 2.0 (the "License"); you may
 # not use this file except in compliance with the License. You may obtain
@@ -12,8 +13,6 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
-# -*- coding: utf-8 -*-
-
 # author : sticver
 # email : sticver@google.com
 
@@ -22,6 +21,8 @@ import hashlib
 import lxml.html
 import datetime
 import random
+import thread
+from Queue import Queue
 from requests import request
 from hound.model.archive import Archive
 from elasticsearch import Elasticsearch
@@ -42,6 +43,8 @@ es.indices.create(index=index_name, ignore=400)
 # proxy ip list
 proxies = IpGet().get_proxy_list()
 
+author_queue = Queue()
+
 
 def find_proxy():
     proxy = {}
@@ -56,13 +59,13 @@ class GeekToutiaoParser(object):
         self.count = 0
         self.proxies = proxies
         if type == "news":
-            self._news_parse_json()
+            self.__news_parse_json()
         elif type == "author":
-            self._author_parse()
+            self.__author_parse()
         else:
             self._hack_count_parse_json()
 
-    def _news_parse_json(self, page_range=0):
+    def __news_parse_json(self, page_range=0):
         r_url = "http://geek.csdn.net/service/news/get_category_news_list?category_id=news&username=&from=" + str(
             page_range) + "&size=" + str(self.size) + "&type=category"
         resp = request("get", r_url, headers=header, proxies=find_proxy())
@@ -74,11 +77,11 @@ class GeekToutiaoParser(object):
                 print "no data at this request"
                 return
             html_str = result["html"]
-            data_list = self._parse_html(html_str, r_url)
+            data_list = self.__parse_html(html_str, r_url)
             if len(data_list) > 0:
-                self._save(data_list)
+                self.__save(data_list)
             if has_more:
-                self._news_parse_json(page_range=(page_range + self.size))
+                self.__news_parse_json(page_range=(page_range + self.size))
 
     def _hack_count_parse_json(self, page_range="-", type="HackCount"):
         r_url = 'http://geek.csdn.net/service/news/get_news_list?from=' + page_range + '&size=20&type=' + type
@@ -93,13 +96,13 @@ class GeekToutiaoParser(object):
             html_str = content['html']
             print 'page_range : %s ' % page_range
 
-            data_list = self._parse_html(html_str, r_url)
+            data_list = self.__parse_html(html_str, r_url)
             if len(data_list) > 0:
-                self._save(data_list)
+                self.__save(data_list)
             if has_more:
                 self._hack_count_parse_json(p_range, type)
 
-    def _parse_html(self, data, website):
+    def __parse_html(self, data, website):
         data_list = []
         page = lxml.html.fromstring(data)
         for ele in page.find_class("geek_list"):
@@ -115,12 +118,12 @@ class GeekToutiaoParser(object):
             data_list.append(art)
         return data_list
 
-    def _save(self, data_list):
+    def __save(self, data_list):
         print "archive list size : %d" % len(data_list)
         for art in data_list:
             es.create(index=index_name, doc_type=doc_type, body=art.as_dict())
 
-    def _author_parse(self):
+    def __author_parse(self):
         data = es.search(index_name, doc_type, body={
             "aggs": {
                 "authors": {
@@ -135,7 +138,9 @@ class GeekToutiaoParser(object):
         print "author list size : %d " % len(author_list)
 
         for author in author_list:
-            self._author_parse_json(author['key'])
+            author_name = author['key']
+            print "author name : %s " % author_name
+            self._author_parse_json(author_name)
 
     def _author_parse_json(self, author, page_size=0):
         r_url = "http://geek.csdn.net/user/publishlist/" + author + "/" + str(page_size)
@@ -153,15 +158,15 @@ class GeekToutiaoParser(object):
             print "no html will be parsed,author : %s, page_size : %d" % (author, page_size)
             return
 
-        data_list = self._parse_html(html_str, r_url)
+        data_list = self.__parse_html(html_str, r_url)
         if len(data_list) > 0:
-            self._save(data_list)
+            self.__save(data_list)
         if content["has_more"]:
             page_size += 1
             self._author_parse_json(author, page_size)
 
 
 if __name__ == '__main__':
-    #gt_news = GeekToutiaoParser(type="news")
-
-    gt_author = GeekToutiaoParser(type="author")
+    gt_news = GeekToutiaoParser(type="news")
+    #gt_author = GeekToutiaoParser(type="author")
+    r_url = "http://geek.csdn.net/user/publishlist/%s/"
