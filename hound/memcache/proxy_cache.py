@@ -16,7 +16,6 @@ class ProxyCache(object):
     def __init__(self):
         self._cache = []
 
-
     def put(self, item):
         '''item format : (host, port)'''
         self._cache.append(item)

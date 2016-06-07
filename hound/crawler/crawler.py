@@ -1,3 +1,4 @@
+import time
 import importlib
 import threading
 from hound import spiders
@@ -60,11 +61,18 @@ class Crawler(object):
             while not self._stop:
 
                 task = self.task_queue.get()
+                task.start_time = time.time()
 
                 response = yield self.http_client.fetch(task.url, **task.request_params)
                 spider_inst = task.spider_cls()
 
                 result = spider_inst.on_callback(task.callback, response.body)
+
+                task.end_time = time.time()
+
+                if task.cached and result:
+                    spider_inst.on_cache(task, result)
+
 
                 if isinstance(result, list) or isinstance(result, dict):
                     spider_inst.on_save(task, result)

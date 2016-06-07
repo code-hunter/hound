@@ -1,4 +1,9 @@
 
+class Policy(object):
+    incremental = 0
+    full = 1
+
+
 class Task(object):
     '''task model '''
 
@@ -9,6 +14,7 @@ class Task(object):
         self.request_params = None
         self.spider_cls = None
         self.func = None
+        self.cached = None
         self.kwargs = None
         self.callback = None
         self.message = None

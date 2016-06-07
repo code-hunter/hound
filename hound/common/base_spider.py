@@ -2,18 +2,18 @@ from abc import abstractmethod
 import six
 import uuid
 from hound.model.task import Task
+from hound.model.archive import Archive
+from hound.model.entry import Entry
 from hound.common.exception import *
+from hound.common.md5 import getMd5
 from hound.mq.local_queue import LocalQueue
-from hound.db.es import ESClient
 from hound.db import get_db_client
+from hound.memcache.result_cache import ResultCache
 
 
 class BaseMeta(type):
 
     def __new__(cls, name, bases, attrs):
-
-        for k in attrs.keys():
-            print(str(k) + ' : ' + str(attrs[k]))
 
         newcls = type.__new__(cls, name, bases, attrs)
         return  newcls
@@ -26,6 +26,7 @@ class BaseSpider(object):
 
     def __init__(self):
         self.queue = LocalQueue()
+        self.result_cache = ResultCache()
 
     def create_task(self, url, **kwargs):
         task = Task()
@@ -55,6 +56,7 @@ class BaseSpider(object):
 
         task.func = func
         task.url = url
+        task.cached = kwargs.get('cached', False)
         task.id = str(uuid.uuid4())
         task.spider_cls = self.__class__
 
@@ -76,6 +78,35 @@ class BaseSpider(object):
     def on_callback(self, cb_name, response, *args, **kwargs):
         func = getattr(self, cb_name)
         return func(response, *args, **kwargs)
+
+
+
+    def on_cache(self, task, result):
+
+        def _cache(task, item):
+            entry = Entry()
+            entry.url = task.url
+            entry.md5 = getMd5(task.url)
+            entry.last_archive = item
+            entry.last_fetched_time = task.end_time
+
+            self.result_cache.put(entry.md5, entry)
+
+        if isinstance(result, list):
+            if len(list) <= 0:
+                raise NoResultError
+
+            last_cached_archive = result[0]
+            if not isinstance(last_cached_archive, Archive):
+                raise InvalidCachedType
+
+            _cache(task, last_cached_archive)
+
+        elif isinstance(result, Archive):
+            _cache(task, result)
+
+        else:
+            raise InvalidCachedType
 
     def on_save(self, task, result):
 
