@@ -13,9 +13,6 @@ class ProxyCache(object):
         else:
             return getattr(cls, '_instance')
 
-    def __init__(self):
-        self._cache = []
-
     def put(self, item):
         '''item format : (host, port)'''
         self._cache.append(item)
@@ -30,7 +27,7 @@ if __name__ == '__main__':
     proxy_cache.put(('host1', '9090'))
     proxy_cache.put(('host2', '9292'))
 
-    print proxy_cache.get()
+    print(proxy_cache.get())
 
 
 

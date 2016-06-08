@@ -13,9 +13,6 @@ class ResultCache(object):
         else:
             return getattr(cls, '_instance')
 
-    def __init__(self):
-        self._cache = {}
-
     def put(self, key, value):
         self._cache[key] = value
 
