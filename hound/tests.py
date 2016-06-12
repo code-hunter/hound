@@ -59,5 +59,6 @@ from tornado.ioloop import IOLoop
 # IOLoop.current().start()
 #
 
-
-
+from datetime import datetime
+dt = datetime(1970, 1, 2, 0, 0)
+print(dt.timestamp())

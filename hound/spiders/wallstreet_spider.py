@@ -3,7 +3,6 @@ import bs4
 import re
 import hashlib
 from bs4 import BeautifulSoup
-from hound.model.task import Policy
 from hound.model.archive import Archive
 from hound.common.base_spider import BaseSpider
 
@@ -15,7 +14,7 @@ class WallStreetSpider(BaseSpider):
     urls = ['http://wallstreetcn.com/news?page=1','http://wallstreetcn.com/news?page=2']
 
     def start(self):
-        return self.crawl('http://wallstreetcn.com/news?page=1',cached=True, policy=Policy.incremental, page_range=[],  callback=self.parse1)
+        return self.crawl('http://wallstreetcn.com/news?page=1',cached=True, depth=10,  callback=self.parse1)
 
     def parse1(self, response):
 

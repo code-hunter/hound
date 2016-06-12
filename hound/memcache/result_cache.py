@@ -7,7 +7,7 @@ class ResultCache(object):
         if not hasattr(cls, '_instance'):
             _instance = super(ResultCache,cls).__new__(cls, *args, **kwargs)
             setattr(cls, '_instance', _instance)
-            _cache = weakref.WeakKeyDictionary()
+            _cache = {}
             setattr(_instance, '_cache', _cache)
             return _instance
         else:
@@ -17,7 +17,7 @@ class ResultCache(object):
         self._cache[key] = value
 
     def get(self, key):
-        return self._cache[key]
+        return self._cache.get(key, None)
 
     def all(self):
         return self._cache

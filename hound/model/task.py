@@ -1,9 +1,4 @@
 
-class Policy(object):
-    incremental = 0
-    full = 1
-
-
 class Task(object):
     '''task model '''
 

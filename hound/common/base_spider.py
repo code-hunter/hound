@@ -23,6 +23,7 @@ class BaseSpider(object):
     __metaclass__ = BaseMeta
     project_name = None
     db_conn = None
+    _stop = False
 
     def __init__(self):
         self.queue = LocalQueue()
@@ -64,6 +65,9 @@ class BaseSpider(object):
 
     def crawl(self, urls, **kwargs):
 
+        if self._stop:
+            return None
+
         if isinstance(urls, list):
             for url in urls:
                 self.create_task(url, **kwargs)
@@ -79,8 +83,6 @@ class BaseSpider(object):
         func = getattr(self, cb_name)
         return func(response, *args, **kwargs)
 
-
-
     def on_cache(self, task, result):
 
         def _cache(task, item):
@@ -93,7 +95,7 @@ class BaseSpider(object):
             self.result_cache.put(entry.md5, entry)
 
         if isinstance(result, list):
-            if len(list) <= 0:
+            if len(result) <= 0:
                 raise NoResultError
 
             last_cached_archive = result[0]
@@ -117,12 +119,55 @@ class BaseSpider(object):
 
         if isinstance(result, dict):
             db_client.create(result)
+        elif isinstance(result, Archive):
+            db_client.client(result.as_dict())
         elif isinstance(result, list):
             for item in result:
                 db_client.create(item)
         else:
             raise InvalidResult
 
+    def check_result(self, task, result):
+        '''if item has been cached, drop results after the item, and set stop_spider'''
+        found = False
+        cached_key = getMd5(task.url)
+        cached_item = self.result_cache.get(cached_key)
+
+        if not cached_item:
+            return (result, found)
+
+        index = 0
+        if isinstance(result, list):
+            for item in result:
+                if item.md5 == cached_item.md5:
+                    found = True
+                    break
+                index += 1
+            if found:
+                return  result[:index]
+        elif isinstance(result, Archive):
+            if result.md5 == cached_item.md5:
+                found = True
+            if found:
+                return None
+        elif isinstance(result, dict):
+            if result['md5'] == cached_item.md5:
+                found = True
+            if found:
+                return None
+        else:
+            raise InvalidResult
+
+        return (result, found)
+
+    @classmethod
+    def stop_spider(cls):
+        '''set flag to stop spider'''
+        cls._stop = True
+
+    @classmethod
+    def is_stopped(cls):
+        return cls._stop
 
 
 

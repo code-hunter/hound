@@ -10,6 +10,7 @@ from hound.common.base_spider import BaseSpider
 from hound.http.httpclient import HttpClient
 from hound.common import logger
 from hound.memcache.result_cache import ResultCache
+from hound.model.archive import Archive
 
 LOG = logger.get_logger(__name__)
 
@@ -60,22 +61,30 @@ class Crawler(object):
         def task_loop():
             while not self._stop:
 
+                print('fetch task...')
                 task = self.task_queue.get()
                 task.start_time = time.time()
+                spider_cls = task.spider_cls
+                spider_inst = task.spider_cls()
+                if spider_cls.is_stopped():
+                    LOG.info('spider : %s has been stopped.' % (spider_inst.name) )
+                    return
 
                 response = yield self.http_client.fetch(task.url, **task.request_params)
-                spider_inst = task.spider_cls()
 
                 result = spider_inst.on_callback(task.callback, response.body)
 
+                result, stop_spider = spider_inst.check_result(task, result)
                 task.end_time = time.time()
 
                 if task.cached and result:
                     spider_inst.on_cache(task, result)
 
-
-                if isinstance(result, list) or isinstance(result, dict):
+                if isinstance(result, list) or isinstance(result, dict) or isinstance(result, Archive):
                     spider_inst.on_save(task, result)
+
+                if stop_spider:
+                    spider_cls.stop_spider()
 
         spiders_cls = self.get_all_spiders()
         for spider_cls in spiders_cls:
