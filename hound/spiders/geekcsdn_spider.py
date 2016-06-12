@@ -21,7 +21,7 @@ urls = []
 def get_geek_url(type, page_range=0, page_size=20):
     if type == "news":
         return "http://geek.csdn.net/service/news/get_category_news_list?category_id=news&username=&from=" + str(
-                page_range) + "&size=" + str(page_size) + "&type=category"
+            page_range) + "&size=" + str(page_size) + "&type=category"
     elif type == "author":
         data = es.search(index_name, doc_type, body={
             "aggs": {
@@ -42,13 +42,13 @@ def get_geek_url(type, page_range=0, page_size=20):
                 }
             }
         }, suggest_size=10)
-    author_list = data['aggregations']['authors']['buckets']
-    print "author list size : %d " % len(author_list)
+        author_list = data['aggregations']['authors']['buckets']
+        print "author list size : %d " % len(author_list)
 
-    r_url = "http://geek.csdn.net/user/publishlist/%s/" + str(page_range)
-    for author in author_list:
-        author_url = r_url % author['key']
-        urls.append(author_url)
+        r_url = "http://geek.csdn.net/user/publishlist/%s/" + str(page_range)
+        for author in author_list:
+            author_url = r_url % author['key']
+            urls.append(author_url)
 
 
 def parse_html(data):
@@ -57,7 +57,7 @@ def parse_html(data):
     :param data: html str
     :return: archive list
     """
-    # data_list = []
+    data_list = []
     page = lxml.html.fromstring(data)
     for ele in page.find_class("geek_list"):
         art = Archive()
@@ -66,21 +66,27 @@ def parse_html(data):
         art.title = ele.find_class("title")[0].text_content()
         art.author_url = ele.find_class("right")[0].cssselect("a")[0].attrib['href']
         art.author = art.author_url.split("/")[-1]
-        url_q = urllib.quote(art.url.encode("utf8"))
-        art.md5 = hashlib.md5(url_q).hexdigest()
+        # url_q = urllib.quote(art.url.encode("utf8"))
+        # art.md5 = hashlib.md5(url_q).hexdigest()
         art.create_time = datetime.now()
 
-        # data_list.append(art)
-        print art.as_dict()
-        # return data_list
+        data_list.append(art)
+    return data_list
 
 
 class GeekNewsSpider(BaseSpider):
     name = "geek.csdn_spider"
     type = "news"
+    db_conn = 'elasticsearch://192.168.10.67:9300/truecloud_db_development/test/test'
+
+    def __init__(self):
+        super(GeekNewsSpider, self).__init__()
+        self.page_range = 0
+        self.page_size = 20
 
     def start(self):
-        return self.crawl(get_geek_url(self.type), callback=self.result_to_json)
+        return self.crawl(get_geek_url(self.type, page_range=self.page_range, page_size=self.page_size),
+                          callback=self.result_to_json)
 
     def result_to_json(self, response):
         result = json.loads(response)
@@ -88,10 +94,17 @@ class GeekNewsSpider(BaseSpider):
         has_more = result['has_more']
         if status != 1:
             print "no data at this request"
-            return
+            return None
         html_str = result["html"]
         if html_str is not None:
-            parse_html(html_str)
+            return parse_html(html_str)
+
+        # parse sub urls
+        if has_more:
+            self.page_range += self.page_size
+            self.crawl(get_geek_url(self.type, ), type='page', callback=self.result_to_json)
+
+        return None
 
 
 class GeekAuthorSpider(BaseSpider):
@@ -116,7 +129,8 @@ class GeekAuthorSpider(BaseSpider):
             return
 
         if html_str is not None:
-            parse_html(html_str)
+            return parse_html(html_str)
+        return None
 
 
 if __name__ == "__main__":

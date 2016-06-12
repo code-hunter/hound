@@ -18,10 +18,11 @@ class ProxyCache(object):
         self._cache.append(item)
 
     def get(self):
-        if len(self._cache) > 0:
-            return self._cache[random.randint(0, len(self._cache) - 1)]
-        else:
+
+        if len(self._cache) < 1:
             return None
+        return self._cache[random.randint(0, len(self._cache) - 1)]
+
 
 if __name__ == '__main__':
 
