@@ -36,3 +36,6 @@ class TornadoQueue(object):
 
     def put(self,item, timeout=None):
         return self._queue.put(item, timeout)
+
+    def task_done(self):
+        return self._queue.task_done()

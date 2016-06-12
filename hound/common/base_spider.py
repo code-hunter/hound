@@ -137,25 +137,28 @@ class BaseSpider(object):
         if not cached_item:
             return (result, found)
 
+        last_cache_archive = cached_item.last_archive
+
         index = 0
         if isinstance(result, list):
             for item in result:
-                if item.md5 == cached_item.md5:
+                if item.md5 == last_cache_archive.md5:
                     found = True
                     break
                 index += 1
             if found:
-                return  result[:index]
+                return ( None  if index == 0 else  result[:index], found)
+
         elif isinstance(result, Archive):
             if result.md5 == cached_item.md5:
                 found = True
             if found:
-                return None
+                return (None, found)
         elif isinstance(result, dict):
             if result['md5'] == cached_item.md5:
                 found = True
             if found:
-                return None
+                return (None, found)
         else:
             raise InvalidResult
 

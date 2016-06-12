@@ -52,8 +52,8 @@ class WallStreetSpider(BaseSpider):
             result.append(archiveInst)
 
         #parse sub urls
-        for sub_url in sub_urls:
-            self.crawl(sub_url, type='page',callback=self.parse2)
+        # for sub_url in sub_urls:
+        #     self.crawl(sub_url, type='page',callback=self.parse2)
 
         return result
 

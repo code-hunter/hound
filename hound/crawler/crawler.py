@@ -60,28 +60,33 @@ class Crawler(object):
         @gen.coroutine
         def task_loop():
             while not self._stop:
+                try:
+                    task = yield self.task_queue.get()
+                    task.start_time = time.time()
+                    spider_cls = task.spider_cls
+                    spider_inst = task.spider_cls()
+                    if spider_cls.is_stopped():
+                        LOG.info('spider : %s has been stopped.' % (spider_inst.name) )
+                        return
 
-                task = yield self.task_queue.get()
-                task.start_time = time.time()
-                spider_cls = task.spider_cls
-                spider_inst = task.spider_cls()
-                if spider_cls.is_stopped():
-                    LOG.info('spider : %s has been stopped.' % (spider_inst.name) )
-                    return
+                    response = yield self.http_client.fetch(task.url, **task.request_params)
+                    result = spider_inst.on_callback(task.callback, response.body)
+                    task.end_time = time.time()
 
-                response = yield self.http_client.fetch(task.url, **task.request_params)
-                result = spider_inst.on_callback(task.callback, response.body)
-                result, stop_spider = spider_inst.check_result(task, result)
-                task.end_time = time.time()
+                    if result:
+                        result, stop_spider = spider_inst.check_result(task, result)
 
-                if task.cached and result:
-                    spider_inst.on_cache(task, result)
+                        if task.cached and result:
+                            spider_inst.on_cache(task, result)
 
-                if isinstance(result, list) or isinstance(result, dict) or isinstance(result, Archive):
-                    spider_inst.on_save(task, result)
+                        if isinstance(result, list) or isinstance(result, dict) or isinstance(result, Archive):
+                            spider_inst.on_save(task, result)
 
-                if stop_spider:
-                    spider_cls.stop_spider()
+                        if stop_spider:
+                            spider_cls.stop_spider()
+                finally:
+                    self.task_queue.task_done()
+
 
         spiders_cls = self.get_all_spiders()
         for spider_cls in spiders_cls:
