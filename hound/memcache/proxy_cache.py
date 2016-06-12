@@ -18,6 +18,8 @@ class ProxyCache(object):
         self._cache.append(item)
 
     def get(self):
+        if len(self._cache) < 1:
+            return None
         return self._cache[random.randint(0, len(self._cache) - 1)]
 
 

@@ -1,3 +1,7 @@
+import urllib
+from hound.common.md5 import getMd5
+from datetime import datetime
+
 
 class Archive(object):
 
@@ -23,8 +27,9 @@ class Archive(object):
                  'author_url': self.author_url,
                  'summary': self.summary,
                  'url': self.url,
-                 'md5': self.md5,
+                 'md5': getMd5(urllib.quote(self.url.encode("utf8"))),  #hashlib.md5(urllib.quote(self.url.encode("utf8"))).hexdigest(),
                  'published_time': self.published_time,
                  'page_views': self.page_views,
                  'comments': self.comments,
-                 'create_time': self.create_time}
+                 'create_time': self.create_time if self.create_time is None else datetime.now()
+                }

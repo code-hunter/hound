@@ -4,16 +4,15 @@
 import urllib
 import hashlib
 import lxml.html
+from requests import request
 from datetime import datetime, timedelta
-from bs4 import BeautifulSoup
 from hound.model.archive import Archive
 from hound.common.base_spider import BaseSpider
 
-"""
+
 header = {
     "User-Agent": 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.94 Safari/537.36'
 }
-"""
 
 urls=[]
 format_str = '%Y-%m-%d'
@@ -33,24 +32,35 @@ def count_urls():
 count_urls()
 
 
+def get_redirect_url(url):
+    r = request("get", url, allow_redirects=False, headers=header)
+    return r.headers["location"].split("?")[0]
+
+
 class ToutiaoSpider(BaseSpider):
     name = "tooutiao.io_spider"
+    db_conn = 'elasticsearch://192.168.10.67:9300/truecloud_db_development/test/test'
 
     def start(self):
-        return self.crawl(urls[-1], callback=self.parse)
+        return self.crawl(urls, callback=self.parse)
 
     def parse(self, response):
-        # page = BeautifulSoup(response, 'lxml', from_encoding='utf8')
-        page = lxml.html.fromstring(response)
+        result = []
+        page = lxml.html.fromstring(response.decode('utf-8'))
         for ele in page.find_class("post"):
             art = Archive()
             art.website = "toutiao.io"
             art.author = ele.find_class('subject-name')[0].cssselect("a")[0].text_content()
+
+            # get redirect url by toutiao url
             art.title = ele.find_class('title')[0].cssselect("a")[0].text_content()
-            art.url = ele.find_class('title')[0].cssselect("a")[0].attrib['href']
+            tmp_url = ele.find_class('title')[0].cssselect("a")[0].attrib['href']
+            art.url = get_redirect_url(tmp_url)
+
             # url encode
-            url_q = urllib.quote(art.url.encode("utf8"))
-            art.md5 = hashlib.md5(url_q).hexdigest()
+            # url_q = urllib.quote(art.url.encode("utf8"))
+            # art.md5 = hashlib.md5(url_q).hexdigest()
             art.create_time = datetime.now()
-            print art.as_dict()
+            result.append(art)
+        return result
 

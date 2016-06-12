@@ -2,10 +2,8 @@
 
 import requests
 import bs4
+from hound.memcache.proxy_cache import ProxyCache
 from hound.model.proxyinfo import ProxyInfo
-from elasticsearch import Elasticsearch
-
-DATA_LIST = []
 
 
 def get_ip84_url(num=2):
@@ -47,28 +45,13 @@ def get_data_of_ip84(url):
 
 class IpGet(object):
     def __init__(self):
-        global DATA_LIST
-        if len(DATA_LIST) > 0:
-            return
-        # proxy list
-        proxies = []
+        proxy_cache = ProxyCache()
         data_list = ip84_get()
         for data in data_list[0]:
-            proxy = {
-                data.protocol: data.protocol+"://"+data.ip+":"+data.port
-            }
-            proxies.append(proxy)
-        DATA_LIST = proxies
-
-    def get_proxy_list(self):
-        return DATA_LIST
+            proxy_cache.put((data.ip, data.port, data.protocol))
 
 
 if __name__ == "__main__":
-    list = IpGet().get_proxy_list()
-    print "%d " % len(list)
-
-    list1 = IpGet().get_proxy_list()
-    list2 = IpGet().get_proxy_list()
-    list3 = IpGet().get_proxy_list()
-
+    IpGet()
+    cache = ProxyCache()
+    print cache.get()
