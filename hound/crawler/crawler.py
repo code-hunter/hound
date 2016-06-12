@@ -5,7 +5,7 @@ from hound import spiders
 import tornado
 from tornado.ioloop import IOLoop
 from tornado import gen
-from hound.mq.local_queue import LocalQueue
+from hound.mq import get_mq
 from hound.common.base_spider import BaseSpider
 from hound.http.httpclient import HttpClient
 from hound.common import logger
@@ -17,7 +17,7 @@ LOG = logger.get_logger(__name__)
 class Crawler(object):
 
     def __init__(self):
-        self.task_queue = LocalQueue()
+        self.task_queue = get_mq()
         self.http_client = HttpClient()
         self.result_cache = ResultCache()
         self.fetcher = None
@@ -61,8 +61,7 @@ class Crawler(object):
         def task_loop():
             while not self._stop:
 
-                print('fetch task...')
-                task = self.task_queue.get()
+                task = yield self.task_queue.get()
                 task.start_time = time.time()
                 spider_cls = task.spider_cls
                 spider_inst = task.spider_cls()
@@ -71,9 +70,7 @@ class Crawler(object):
                     return
 
                 response = yield self.http_client.fetch(task.url, **task.request_params)
-
                 result = spider_inst.on_callback(task.callback, response.body)
-
                 result, stop_spider = spider_inst.check_result(task, result)
                 task.end_time = time.time()
 

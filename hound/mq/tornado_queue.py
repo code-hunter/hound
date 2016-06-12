@@ -1,14 +1,13 @@
+from tornado import queues
 
-import Queue
-
-class LocalQueue(object):
+class TornadoQueue(object):
 
     def __new__(cls, *args, **kwargs):
 
         if not hasattr(cls, '_instance'):
-            _instance = super(LocalQueue,cls).__new__(cls, *args, **kwargs)
+            _instance = super(TornadoQueue,cls).__new__(cls, *args, **kwargs)
             setattr(cls, '_instance', _instance)
-            _queue = Queue.Queue()
+            _queue = queues.Queue()
             setattr(_instance, '_queue', _queue)
             return _instance
         else:
@@ -32,8 +31,8 @@ class LocalQueue(object):
     def put_nowait(self,item):
         return self._queue.put_nowait(item)
 
-    def get(self,block=True, timeout=None):
-        return self._queue.get(block, timeout)
+    def get(self, timeout=None):
+        return self._queue.get( timeout)
 
-    def put(self,item, block=True, timeout=None):
-        return self._queue.put(item, block, timeout)
+    def put(self,item, timeout=None):
+        return self._queue.put(item, timeout)
