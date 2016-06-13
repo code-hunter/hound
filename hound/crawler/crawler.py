@@ -66,10 +66,11 @@ class Crawler(object):
                     spider_cls = task.spider_cls
 
                     spider_inst = task.spider_cls()
+                    print('start spider...' + str(spider_cls.is_stopped()))
                     if spider_cls.is_stopped():
                         LOG.info('spider : %s has been stopped.' % (spider_inst.name) )
                         return
-
+                    print('exec spider...' + str(spider_cls.is_stopped()))
                     response = yield self.http_client.fetch(task.url, **task.request_params)
                     result = spider_inst.on_callback(task.callback, response.body)
                     task.end_time = time.time()
@@ -77,11 +78,12 @@ class Crawler(object):
                     if result:
                         result, stop_spider = spider_inst.check_result(task, result)
 
-                        if task.cached and result:
-                            spider_inst.on_cache(task, result)
+                        if result:
+                            if task.cached :
+                                spider_inst.on_cache(task, result)
 
-                        if isinstance(result, list) or isinstance(result, dict) or isinstance(result, Archive):
-                            spider_inst.on_save(task, result)
+                            if isinstance(result, list) or isinstance(result, dict) or isinstance(result, Archive):
+                                spider_inst.on_save(task, result)
 
                         if stop_spider:
                             spider_cls.stop_spider()
