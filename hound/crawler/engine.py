@@ -1,7 +1,6 @@
 from hound.spiders.wallstreet_spider import WallStreetSpider
 import threading
 from concurrent import futures
-from hound.http.request import Request
 from hound.mq.local_queue import *
 
 class Engine(object):
@@ -9,7 +8,7 @@ class Engine(object):
     def __init__(self):
         self.executor = futures.ThreadPoolExecutor(max_workers=32)
         self._stop = False
-        self.queue = LocalQueueInst
+        self.queue = LocalQueue()
 
     def on_request(self, request):
         return request.getHtml()

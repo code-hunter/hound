@@ -47,7 +47,7 @@ class WallStreetSpider(BaseSpider):
             tag_summary = content.find('div', class_ = 'summary hidden-xxs')
             archiveInst.summary = tag_summary.string.strip()
 
-            print archiveInst.as_dict()
+            # print archiveInst.as_dict()
 
             result.append(archiveInst)
 

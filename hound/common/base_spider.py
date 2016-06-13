@@ -6,7 +6,6 @@ from hound.model.archive import Archive
 from hound.model.entry import Entry
 from hound.common.exception import *
 from hound.common.md5 import getMd5
-from hound.mq import get_mq
 from hound.db import get_db_client
 from hound.mq import get_mq
 from hound.memcache.result_cache import ResultCache

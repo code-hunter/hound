@@ -77,17 +77,32 @@ class Crawler(object):
                         result, stop_spider = spider_inst.check_result(task, result)
 
                         if result:
+
+                            if isinstance(result, list):
+                                print('fetch %s new papers.' % (str(len(result))))
+                                for item in result:
+                                    print(item.as_dict())
+                            elif isinstance(result, Archive):
+                                print('fetch 1 new papers')
+                                print(result.as_dict())
+
                             if task.cached :
                                 spider_inst.on_cache(task, result)
 
                             if isinstance(result, list) or isinstance(result, dict) or isinstance(result, Archive):
                                 spider_inst.on_save(task, result)
+                        else:
+                            print('no new paper found.')
 
                         if stop_spider:
                             spider_cls.stop_spider()
                 finally:
                     self.task_queue.task_done()
 
+        # @gen.coroutine
+        # def worker():
+        #     while True:
+        #         yield task_loop()
 
         spiders_cls = self.get_all_spiders()
         for spider_cls in spiders_cls:
@@ -96,6 +111,10 @@ class Crawler(object):
             spider_inst.start()
 
         yield task_loop()
+
+        # for i in range(5):
+        #     print(str(i))
+        #     worker()
 
 if __name__ == '__main__':
     @gen.coroutine
