@@ -170,6 +170,10 @@ class BaseSpider(object):
         cls._stop = True
 
     @classmethod
+    def start_spider(cls):
+        cls._stop = False
+
+    @classmethod
     def is_stopped(cls):
         return cls._stop
 

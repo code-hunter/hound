@@ -64,6 +64,7 @@ class Crawler(object):
                     task = yield self.task_queue.get()
                     task.start_time = time.time()
                     spider_cls = task.spider_cls
+
                     spider_inst = task.spider_cls()
                     if spider_cls.is_stopped():
                         LOG.info('spider : %s has been stopped.' % (spider_inst.name) )
@@ -90,6 +91,7 @@ class Crawler(object):
 
         spiders_cls = self.get_all_spiders()
         for spider_cls in spiders_cls:
+            spider_cls.start_spider()
             spider_inst = spider_cls()
             spider_inst.start()
 
