@@ -16,12 +16,13 @@ LOG = logger.get_logger(__name__)
 
 class Engine(object):
 
-    def __init__(self):
+    def __init__(self, coroutine_size=8):
         self.task_queue = get_mq()
         self.http_client = HttpClient()
         self.result_cache = ResultCache()
         self.fetcher = None
         self._stop = False
+        self.coroutine_size = coroutine_size
 
     @gen.coroutine
     def do_task(self, task):
@@ -79,27 +80,27 @@ class Engine(object):
         print('start run engine...')
         @gen.coroutine
         def task_loop():
-            while not self._stop:
-                try:
-                    item = yield self.task_queue.get()
-                    if isinstance(item, Task):
-                        yield self.do_task(item)
-                    elif isinstance(item, TaskChain):
-                        yield self.do_task_chain(item)
+            # while not self._stop:
+            try:
+                item = yield self.task_queue.get()
+                if isinstance(item, Task):
+                    yield self.do_task(item)
+                elif isinstance(item, TaskChain):
+                    yield self.do_task_chain(item)
 
-                finally:
-                    self.task_queue.task_done()
+            finally:
+                self.task_queue.task_done()
                     # break
 
-        # @gen.coroutine
-        # def worker():
-        #     while True:
-        #         yield task_loop()
+        @gen.coroutine
+        def worker():
+            while True:
+                yield task_loop()
 
-        yield task_loop()
+        # yield task_loop()
 
-        # for i in range(5):
-        #     worker()
-        #
-        # yield self.task_queue.join()
+        for i in range(self.coroutine_size):
+            worker()
+
+        yield self.task_queue.join()
 

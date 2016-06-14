@@ -13,7 +13,7 @@ if __name__ == '__main__':
 
     @gen.coroutine
     def start_engine():
-        engine = Engine()
+        engine = Engine(coroutine_size=8)
         yield engine.run()
 
     ioloop = IOLoop().current()
