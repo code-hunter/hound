@@ -2,6 +2,7 @@ from abc import abstractmethod
 import six
 import uuid
 from hound.model.task import Task
+from hound.model.task_chain import TaskChain
 from hound.model.archive import Archive
 from hound.model.entry import Entry
 from hound.common.exception import *
@@ -29,7 +30,7 @@ class BaseSpider(object):
         self.queue = get_mq()
         self.result_cache = ResultCache()
 
-    def create_task(self, url, **kwargs):
+    def _create_task(self, url, **kwargs):
         task = Task()
 
         if kwargs.get('callback'):
@@ -61,7 +62,19 @@ class BaseSpider(object):
         task.id = str(uuid.uuid4())
         task.spider_cls = self.__class__
 
+        return task
+
+    def create_task(self, url, **kwargs):
+        task = self._create_task(url, **kwargs)
         self.queue.put(task)
+
+    def create_task_chain(self, urls, **kwargs):
+        task_chain = TaskChain()
+
+        for url in urls:
+            task_chain.put(self._create_task(url, **kwargs))
+
+        self.queue.put(task_chain)
 
     def crawl(self, urls, **kwargs):
 
@@ -69,8 +82,10 @@ class BaseSpider(object):
             return None
 
         if isinstance(urls, list):
-            for url in urls:
-                self.create_task(url, **kwargs)
+            if len(urls) == 1:
+                self.create_task(urls, **kwargs)
+            else:
+                self.create_task_chain(urls, **kwargs)
         elif isinstance(urls, str):
             self.create_task(urls, **kwargs)
         elif isinstance(urls, unicode):

@@ -9,6 +9,7 @@ if __name__ == '__main__':
     def run():
         crawler = Crawler()
         yield crawler.run()
+        print 'run over'
 
     ioloop = IOLoop().current()
     # ioloop.run_sync(run)

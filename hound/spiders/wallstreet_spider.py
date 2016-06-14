@@ -14,7 +14,7 @@ class WallStreetSpider(BaseSpider):
     urls = ['http://wallstreetcn.com/news?page=1','http://wallstreetcn.com/news?page=2']
 
     def start(self):
-        return self.crawl('http://wallstreetcn.com/news?page=1',cached=True, depth=10,  callback=self.parse1)
+        return self.crawl(self.urls ,cached=True, depth=10,  callback=self.parse1)
 
     def parse1(self, response):
 
