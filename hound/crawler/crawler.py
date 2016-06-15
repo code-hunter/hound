@@ -1,18 +1,7 @@
-import time
 import importlib
-import threading
 from hound import spiders
-import tornado
-from tornado.ioloop import IOLoop
-from tornado import gen
-from hound.mq import get_mq
 from hound.common.base_spider import BaseSpider
-from hound.http.httpclient import HttpClient
 from hound.common import logger
-from hound.memcache.result_cache import ResultCache
-from hound.model.archive import Archive
-from hound.model.task import Task
-from hound.model.task_chain import TaskChain
 
 LOG = logger.get_logger(__name__)
 

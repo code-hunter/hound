@@ -1,10 +1,6 @@
 import time
-import importlib
-import threading
-from concurrent import futures
 from tornado import gen
 from hound.mq import get_mq
-from hound.common.base_spider import BaseSpider
 from hound.http.httpclient import HttpClient
 from hound.http.response import Response
 from hound.common import logger
