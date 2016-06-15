@@ -10,6 +10,7 @@ class Task(object):
         self.spider_cls = None
         self.func = None
         self.cached = None
+        self.chained = None
         self.kwargs = None
         self.callback = None
         self.message = None

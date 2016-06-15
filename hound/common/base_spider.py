@@ -59,6 +59,7 @@ class BaseSpider(object):
         task.func = func
         task.url = url
         task.cached = kwargs.get('cached', False)
+        task.chained = kwargs.get('chained', False)
         task.id = str(uuid.uuid4())
         task.spider_cls = self.__class__
 
@@ -78,6 +79,8 @@ class BaseSpider(object):
 
     def crawl(self, urls, **kwargs):
 
+        chained = kwargs.get('chained', False)
+
         if self._stop:
             return None
 
@@ -85,7 +88,11 @@ class BaseSpider(object):
             if len(urls) == 1:
                 self.create_task(urls, **kwargs)
             else:
-                self.create_task_chain(urls, **kwargs)
+                if chained:
+                    self.create_task_chain(urls, **kwargs)
+                else:
+                    for url in urls:
+                        self.create_task(url, **kwargs)
         elif isinstance(urls, str):
             self.create_task(urls, **kwargs)
         elif isinstance(urls, unicode):

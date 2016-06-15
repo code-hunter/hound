@@ -6,6 +6,7 @@ from tornado import gen
 from hound.mq import get_mq
 from hound.common.base_spider import BaseSpider
 from hound.http.httpclient import HttpClient
+from hound.http.response import Response
 from hound.common import logger
 from hound.memcache.result_cache import ResultCache
 from hound.model.archive import Archive
@@ -20,9 +21,9 @@ class Engine(object):
         self.task_queue = get_mq()
         self.http_client = HttpClient()
         self.result_cache = ResultCache()
+        self.coroutine_size = coroutine_size
         self.fetcher = None
         self._stop = False
-        self.coroutine_size = coroutine_size
 
     @gen.coroutine
     def do_task(self, task):
@@ -33,8 +34,13 @@ class Engine(object):
         if spider_cls.is_stopped():
             LOG.info('spider : %s has been stopped.' % (spider_inst.name) )
             return
-        response = yield self.http_client.fetch(task.url, **task.request_params)
-        result = spider_inst.on_callback(task.callback, response.body)
+        result = yield self.http_client.fetch(task.url, **task.request_params)
+
+        response = Response()
+        response.url = task.url
+        response.content = result.body
+
+        result = spider_inst.on_callback(task.callback, response)
         task.end_time = time.time()
         print(str('task url : ' + task.url))
 
@@ -99,7 +105,7 @@ class Engine(object):
 
         # yield task_loop()
 
-        for i in range(self.coroutine_size):
+        for _ in range(self.coroutine_size):
             worker()
 
         yield self.task_queue.join()
