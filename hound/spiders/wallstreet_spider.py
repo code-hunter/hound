@@ -10,7 +10,8 @@ from hound.common.base_spider import BaseSpider
 class WallStreetSpider(BaseSpider):
 
     name = 'wallstreet_spider'
-    db_conn = 'elasticsearch://localhost:9300/local-es/hound/crawler'
+    # db_conn = 'elasticsearch://localhost:9300/local-es/hound/crawler'
+    db_conn = 'mongodb://localhost:27017/hunter/archive'
     urls = ['http://wallstreetcn.com/news?page=1','http://wallstreetcn.com/news?page=2']
 
     def start(self):

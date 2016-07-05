@@ -43,7 +43,8 @@ class  ESClient(object):
             raise InvalidDBConnString
 
     def create(self, doc={}, id=None):
-        doc = doc.as_dict()
+        if not isinstance(doc, dict):
+            doc = doc.as_dict()
         doc['create_time'] = time.time()
         return self.client.index(index=self.index, doc_type=self.type, body= doc, id=id)
 
