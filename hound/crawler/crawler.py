@@ -2,13 +2,15 @@ import importlib
 from hound import spiders
 from hound.common.base_spider import BaseSpider
 from hound.common import logger
+from hound.memcache.url_cache import UrlCache
 
 LOG = logger.get_logger(__name__)
 
 class Crawler(object):
 
     def __init__(self):
-        pass
+        self.spiders = []
+        self.url_cache = UrlCache()
 
     def load_module(self, module_name):
         try:
@@ -42,8 +44,21 @@ class Crawler(object):
         spiders_cls = self.get_all_spiders()
         for spider_cls in spiders_cls:
             spider_cls.start_spider()
+            self.spiders.append(spiders_cls)
             spider_inst = spider_cls()
             spider_inst.start()
+
+    def periodic_run(self):
+        for (name, url_list) in self.url_cache:
+            for spider_cls in self.spiders:
+                if spider_cls.name == name:
+                    spider_cls.start_spider()
+                    spider_cls.urls = url_list
+                    spider_inst = spider_cls()
+                    spider_inst.start()
+
+
+
 
 
 

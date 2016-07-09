@@ -10,6 +10,7 @@ from hound.common.md5 import getMd5
 from hound.db import get_db_client
 from hound.mq import get_mq
 from hound.memcache.result_cache import ResultCache
+from hound.memcache.url_cache import UrlCache
 
 
 class BaseMeta(type):
@@ -22,13 +23,26 @@ class BaseMeta(type):
 class BaseSpider(object):
 
     __metaclass__ = BaseMeta
-    project_name = None
+    name = None
     db_conn = None
     _stop = False
 
     def __init__(self):
         self.queue = get_mq()
         self.result_cache = ResultCache()
+        self.url_cache = UrlCache
+
+    def cache_parsed_url(self, urls):
+
+        if isinstance(urls, str):
+            self.url_cache.put(self.name, urls)
+        elif isinstance(urls, unicode):
+            self.url_cache.put(self.name, urls)
+        elif isinstance(urls, list):
+            for url in urls:
+                self.url_cache.put(self.name, url)
+        else:
+            raise InvalidUrl
 
     def _create_task(self, url, **kwargs):
         task = Task()
@@ -100,6 +114,7 @@ class BaseSpider(object):
         else:
             raise InvalidUrl
 
+        self.cache_parsed_url(urls)
 
     def on_callback(self, cb_name, response, *args, **kwargs):
         func = getattr(self, cb_name)

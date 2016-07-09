@@ -13,7 +13,7 @@ class WallStreetSpider(BaseSpider):
     # db_conn = 'elasticsearch://localhost:9300/local-es/hound/crawler'
     db_conn = 'mongodb://localhost:27017/hunter/archive'
     urls = ['http://wallstreetcn.com/news?page=1','http://wallstreetcn.com/news?page=2']
-
+    _stop = False
     def start(self):
         return self.crawl(self.urls ,cached=True, chained=True, depth=10, callback=self.parse1)
 
